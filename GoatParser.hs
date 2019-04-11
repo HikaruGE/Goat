@@ -198,7 +198,7 @@ pVar = choice[try(pVarMa),try(pVarAr),pVarId]
 pVarId,pVarAr,pVarMa :: Parser Var
 pVarId
     = do
-        id <- identifier
+        id <- identifier <?> "Illegal identifier name."
         return (Id id)
 pVarAr
     = do
