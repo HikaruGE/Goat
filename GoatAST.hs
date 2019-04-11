@@ -6,7 +6,7 @@ module GoatAST where
 
 type Ident = String
 
-data Program
+data GoatProgram
   = Program [Proc]
     deriving (Show, Eq)
 
@@ -19,9 +19,11 @@ data Param
     deriving (Show, Eq)
 
 data Decl
-  = Decl BaseType Ident
+  = DeclVar BaseType Ident
+  | DeclArray BaseType Ident Integer
+  | DeclMatrix BaseType Ident Integer Integer
     deriving (Show, Eq)
-
+ 
 data Stmt 
   = Assign Ident Expr
   | Read Var
@@ -34,6 +36,10 @@ data Stmt
 
 data Expr
   = Const Const
+  | Var Var
+  | Unary UnaOp Expr
+  | Binary BinOp Expr Expr
+    deriving (Show, Eq)
   --   BoolConst Bool
   -- | IntConst Int
   -- | FloatConst Float
@@ -42,10 +48,7 @@ data Expr
   -- | Id Ident
   -- | Array Ident Expr
   -- | Matrix Ident Expr Expr
-  | Var Var
-  | Unary UnaOp Expr
-  | Binary BinOp Expr Expr
-    deriving (Show, Eq)
+
 
 data BinOp
   = Add | Sub | Mul | Div
@@ -80,7 +83,7 @@ data Var
 
 data Const
   = BoolConst Bool
-  | IntConst Int
-  | FloatConst Float
+  | IntConst Integer
+  | FloatConst Double
   | StrConst String
     deriving (Show, Eq)
