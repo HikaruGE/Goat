@@ -118,7 +118,7 @@ pDeclMatrix
         int2 <- integer
         return (fromInteger int1 :: Int, fromInteger int2 :: Int)
 
-pStmt = choice [pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,pStmtIf,pStmtIfElse,pStmtWhile]
+pStmt = choice [pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,try(pStmtIfElse),pStmtIf,pStmtWhile]
 pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,pStmtIf,pStmtIfElse,pStmtWhile :: Parser Stmt
 pStmtAssign 
     = do
@@ -219,7 +219,7 @@ pMatrix
         expr2 <- pExpr
         return (expr1,expr2)
 
-pExprOp = choice [parens pExprOp, pExprConst, pExprVar]
+pExprOp = choice [parens pExpr, pExprConst, pExprVar]
 pExpr, pExprConst, pExprVar :: Parser Expr
 pExpr = buildExpressionParser precedence pExprOp
 
