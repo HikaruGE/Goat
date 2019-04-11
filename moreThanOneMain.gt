@@ -1,9 +1,9 @@
-#proc main ()
-#begin
-#end
+proc main ()
+begin
+end
 
 proc x (val float x,ref int k)
-bool wocaonima;
+bool wocaon_ima;
 float wd'nmd;
 bool a[8];
 float b[1,5] ;

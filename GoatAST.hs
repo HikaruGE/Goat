@@ -20,12 +20,12 @@ data Param
 
 data Decl
   = DeclVar BaseType Ident
-  | DeclArray BaseType Ident Integer
-  | DeclMatrix BaseType Ident Integer Integer
+  | DeclArray BaseType Ident Int
+  | DeclMatrix BaseType Ident Int Int
     deriving (Show, Eq)
  
 data Stmt 
-  = Assign Ident Expr
+  = Assign Var Expr
   | Read Var
   | Write Expr
   | Call Ident [Expr]
@@ -83,7 +83,7 @@ data Var
 
 data Const
   = BoolConst Bool
-  | IntConst Integer
-  | FloatConst Double
+  | IntConst Int
+  | FloatConst Float
   | StrConst String
     deriving (Show, Eq)

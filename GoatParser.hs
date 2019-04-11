@@ -172,11 +172,11 @@ pBool =
 pInt =
     do 
         int <- integer
-        return (IntConst int)
+        return (IntConst (fromInteger int :: Int))
 pFloat =
     do 
         f <- float
-        return (FloatConst f)
+        return (FloatConst (realToFrac f :: Float))
 pString
     = do
         char '"'
