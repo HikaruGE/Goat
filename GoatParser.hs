@@ -55,7 +55,7 @@ myOpnames
 --  header "proc main()", followed by the program body.
 -----------------------------------------------------------------
 
-pProg :: Parser GoatProgram
+pProg :: Parser Program
 pProg
     = do 
         procs <- many1 pProc
@@ -268,7 +268,7 @@ pString
 -- main
 -----------------------------------------------------------------
 
-pMain :: Parser GoatProgram
+pMain :: Parser Program
 pMain
     = do
         whiteSpace

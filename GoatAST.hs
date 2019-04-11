@@ -6,7 +6,7 @@ module GoatAST where
 
 type Ident = String
 
-data GoatProgram
+data Program
   = Program [Proc]
     deriving (Show, Eq)
 
