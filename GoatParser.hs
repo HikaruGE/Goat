@@ -198,7 +198,7 @@ pVar = choice[try(pVarMa),try(pVarAr),pVarId]
 pVarId,pVarAr,pVarMa :: Parser Var
 pVarId
     = do
-        id <- identifier <?> "Illegal identifier name."
+        id <- identifier
         return (Id id)
 pVarAr
     = do
@@ -259,8 +259,6 @@ pFloat =
 pString
     = do
         char '"'
-        -- str <- many (satisfy (/= '"'))
-        -- str <- many 
         str <- many (satisfy (isString))
         char '"'
         return (StrConst str)
