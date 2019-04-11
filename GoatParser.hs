@@ -292,7 +292,7 @@ main
         ; input <- readFile (head args)
         ; let output = runParser pMain 0 "" input
         ; case output of
-            Right ast -> print ast
+            Right ast -> print (pPrint ast)
             Left  err -> do { putStr "Parse error at "
                             ; print err
                             }
