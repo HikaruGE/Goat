@@ -25,6 +25,7 @@ proc main ()
         write "\n";
         write "351";
         #write "s"ad";
-        write "
-        sassd";
+        #write "$%\tsa
+        #ssd\n";
+        #write "$%\t		sa";
     end

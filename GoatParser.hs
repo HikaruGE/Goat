@@ -259,11 +259,21 @@ pFloat =
 pString
     = do
         char '"'
-        str <- many (satisfy (/= '"'))
+        -- str <- many (satisfy (/= '"'))
+        -- str <- many 
+        str <- many (satisfy (isString))
         char '"'
         return (StrConst str)
         <?>
         "string"
+
+isString :: Char -> Bool
+isString c = case c of 
+            '\n' -> False
+            '\t' -> False
+            '"'  -> False
+            _    -> True
+
 -----------------------------------------------------------------
 -- main
 -----------------------------------------------------------------
