@@ -24,7 +24,7 @@ proc main ()
         #However, it may contain “\n” to represent a newline character.
         write "\n";
         write "351";
-        write ""sad";
+        #write "s"ad";
         write "
         sassd";
     end

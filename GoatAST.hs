@@ -35,20 +35,14 @@ data Stmt
     deriving (Show, Eq)
 
 data Expr
-  = Const Const
+  = BoolConst Bool
+  | IntConst Int
+  | FloatConst Float
+  | StrConst String
   | Var Var
   | Unary UnaOp Expr
   | Binary BinOp Expr Expr
     deriving (Show, Eq)
-  --   BoolConst Bool
-  -- | IntConst Int
-  -- | FloatConst Float
-  -- | StrConst String
-
-  -- | Id Ident
-  -- | Array Ident Expr
-  -- | Matrix Ident Expr Expr
-
 
 data BinOp
   = Add | Sub | Mul | Div
@@ -71,19 +65,8 @@ data BaseType
   = BoolType | IntType | FloatType
     deriving (Show, Eq)
 
--- data Lvalue 
---   = LId Ident
---     deriving (Show, Eq)
-
 data Var
   = Id Ident
   | Array Ident Expr
   | Matrix Ident Expr Expr
-    deriving (Show, Eq)
-
-data Const
-  = BoolConst Bool
-  | IntConst Int
-  | FloatConst Float
-  | StrConst String
     deriving (Show, Eq)
