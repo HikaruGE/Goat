@@ -242,7 +242,7 @@ precedence = [ [Prefix (reservedOp "-" >> return (Unary Minus))]
 pExprConst = do{const <- pConst;return (Const const)}
 pExprVar = do{var <- pVar;return (Var var)}
 
-pConst = choice [pBool, pInt, pFloat, pString]
+pConst = choice [pBool, try(pFloat), pInt, pString]
 pBool, pInt, pFloat, pString :: Parser Const
 pBool =
     do {reserved "true";return (BoolConst True)}
