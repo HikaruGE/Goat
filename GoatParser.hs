@@ -47,7 +47,7 @@ myReserved
     , "then", "true", "val", "while", "write"]
 myOpnames 
     = ["+", "-", "*", "/", "||", "&&"
-    ,">", ">=", "==", "!=", "<", "<="
+    ,">", ">=", "=", "!=", "<", "<="
     ,":="]
 
 -----------------------------------------------------------------
@@ -85,7 +85,7 @@ pBody
         reserved "begin"
         stmts <- many1 pStmt
         reserved "end"
-        return (decls,[])       
+        return (decls,stmts)       
 
 pDecl = choice [try(pDeclMtx),try(pDeclAry),pDeclVar]
 pDeclVar,pDeclAry,pDeclMtx :: Parser Decl
@@ -219,9 +219,9 @@ pMatrix
         expr2 <- pExpr
         return (expr1,expr2)
 
-pExpr = choice [parens pExprOp, pExprConst, pExprVar]
-pExprOp, pExprConst, pExprVar :: Parser Expr
-pExprOp = buildExpressionParser precedence pExpr
+pExprOp = choice [parens pExprOp, pExprConst, pExprVar]
+pExpr, pExprConst, pExprVar :: Parser Expr
+pExpr = buildExpressionParser precedence pExprOp
 
 precedence = [ [Prefix (reservedOp "-" >> return (Unary Minus))]
              , [Infix (reservedOp "*" >> return (Binary Mul)) AssocLeft, 
