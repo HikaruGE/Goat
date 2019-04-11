@@ -100,7 +100,7 @@ pDeclAry
         id <- identifier
         int <- squares integer
         semi
-        return (DeclArray ty id int)
+        return (DeclArray ty id (fromInteger int :: Int))
 pDeclMtx
     = do
         ty <- pBaseType
@@ -109,13 +109,13 @@ pDeclMtx
         semi
         return (DeclMatrix ty id int1 int2)
 
-pDeclMatrix :: Parser (Integer,Integer)
+pDeclMatrix :: Parser (Int,Int)
 pDeclMatrix
     = do
         int1 <- integer 
         comma 
         int2 <- integer
-        return (int1,int2)
+        return (fromInteger int1 :: Int, fromInteger int2 :: Int)
 
 pIndic :: Parser Indic
 pIndic
