@@ -3,6 +3,7 @@ module Main where
 import GoatAST
 import Data.Char
 import Text.Parsec
+import Text.Parsec.Expr
 import Text.Parsec.Language (emptyDef)
 import qualified Text.Parsec.Token as Q
 import System.Environment
@@ -82,7 +83,7 @@ pBody
     = do
         decls <- many pDecl
         reserved "begin"
-        -- stmts <- many1 pStmt
+        stmts <- many1 pStmt
         reserved "end"
         return (decls,[])       
 
@@ -116,6 +117,67 @@ pDeclMatrix
         comma 
         int2 <- integer
         return (fromInteger int1 :: Int, fromInteger int2 :: Int)
+
+pStmt = choice [pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,pStmtIf,pStmtIfElse,pStmtWhile]
+pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,pStmtIf,pStmtIfElse,pStmtWhile :: Parser Stmt
+pStmtAssign 
+    = do
+        var <- pVar
+        reservedOp ":="
+        expr <- pExpr
+        semi
+        return (Assign var expr)
+
+pStmtRead
+    = do
+        reserved "read"
+        var <- pVar
+        semi
+        return (Read var)
+
+pStmtWrite
+    = do
+        reserved "write"
+        expr <- pExpr
+        semi
+        return (Write expr)
+
+pStmtCall
+    = do
+        reserved "call"
+        id <- identifier
+        exprs <- parens (sepBy pExpr comma)
+        semi
+        return (Call id exprs)
+
+pStmtIf
+    = do
+        reserved "if"
+        con <- pExpr
+        reserved "then"
+        stmts <- many1 pStmt
+        reserved "fi"
+        return (If con stmts)
+
+pStmtIfElse
+    = do
+        reserved "if"
+        con <- pExpr
+        reserved "then"
+        stmts1 <- many1 pStmt
+        reserved "else"
+        stmts2 <- many1 pStmt
+        reserved "fi"
+        return (IfElse con stmts1 stmts2)
+
+pStmtWhile
+    = do
+        reserved "while"
+        con <- pExpr
+        reserved "do"
+        stmts <- many1 pStmt
+        reserved "od"
+        return (While con stmts)
 
 pIndic :: Parser Indic
 pIndic
@@ -157,11 +219,28 @@ pMatrix
         expr2 <- pExpr
         return (expr1,expr2)
 
-pExpr :: Parser Expr
-pExpr = 
-    do{const <- pConst;return (Const const)}
-    <|>
-    do{var <- pVar;return (Var var)}
+pExpr = choice [parens pExprOp, pExprConst, pExprVar]
+pExprOp, pExprConst, pExprVar :: Parser Expr
+pExprOp = buildExpressionParser precedence pExpr
+
+precedence = [ [Prefix (reservedOp "-" >> return (Unary Minus))]
+             , [Infix (reservedOp "*" >> return (Binary Mul)) AssocLeft, 
+                Infix (reservedOp "/" >> return (Binary Div)) AssocLeft]
+             , [Infix (reservedOp "+" >> return (Binary Add)) AssocLeft, 
+                Infix (reservedOp "-" >> return (Binary Sub)) AssocLeft]
+             , [Infix (reservedOp "=" >> return (Binary Eq)) AssocNone,
+                Infix (reservedOp "!=" >> return (Binary NotEq)) AssocNone,
+                Infix (reservedOp "<" >> return (Binary Lt)) AssocNone,
+                Infix (reservedOp "<=" >> return (Binary LtEq)) AssocNone,
+                Infix (reservedOp ">" >> return (Binary Gt)) AssocNone,
+                Infix (reservedOp ">=" >> return (Binary GtEq)) AssocNone]
+             , [Prefix (reservedOp "!" >> return (Unary Neg))]
+             , [Infix (reservedOp "&&" >> return (Binary And)) AssocLeft]
+             , [Infix (reservedOp "||" >> return (Binary Or)) AssocLeft]
+             ]
+
+pExprConst = do{const <- pConst;return (Const const)}
+pExprVar = do{var <- pVar;return (Var var)}
 
 pConst = choice [pBool, pInt, pFloat, pString]
 pBool, pInt, pFloat, pString :: Parser Const

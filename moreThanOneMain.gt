@@ -1,5 +1,6 @@
 proc main ()
 begin
+y := 3+2
 end
 
 proc x (val float x,ref int k)
@@ -8,4 +9,5 @@ float wd'nmd;
 bool a[8];
 float b[1,5] ;
 begin
+y := 3+2
 end
