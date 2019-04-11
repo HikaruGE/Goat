@@ -52,19 +52,19 @@ declPrint (DeclMatrix a b c d)
 
 stmtPrint :: Int -> Stmt -> String
 stmtPrint n (Assign a b)
-  = (replicate n " ") ++ (varPrint a) ++ " := " ++ (exprPrint b) ++ ";\n"
+  = (replicate n ' ') ++ (varPrint a) ++ " := " ++ (exprPrint b) ++ ";\n"
 stmtPrint n (Read a)
-  = (replicate n " ") ++ "read " ++ (varPrint a) ++ ";\n"
+  = (replicate n ' ') ++ "read " ++ (varPrint a) ++ ";\n"
 stmtPrint n (Write a)
-  = (replicate n " ") ++ "write" ++ (exprPrint a) ++ ";\n"
+  = (replicate n ' ') ++ "write" ++ (exprPrint a) ++ ";\n"
 stmtPrint n (Call a b)
-  = (replicate n " ") ++ "call " ++ a ++ "(" ++ (exprListPrint b) ++ ");\n"
+  = (replicate n ' ') ++ "call " ++ a ++ "(" ++ (exprListPrint b) ++ ");\n"
 stmtPrint n (If a b)
-  = (replicate n " ") ++ "if " ++ (exprPrint a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n " ") ++ "fi\n"
+  = (replicate n ' ') ++ "if " ++ (exprPrint a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "fi\n"
 stmtPrint n (IfElse a b c)
-  = (replicate n " ") ++ "if " ++ (exprPrint a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n " ") ++ "else\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) c)) ++ (replicate n " ") ++ "fi\n"
+  = (replicate n ' ') ++ "if " ++ (exprPrint a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "else\n" ++ (foldl (++) "" (map (stmtPrint (n + 1)) c)) ++ (replicate n ' ') ++ "fi\n"
 stmtPrint n (While a b)
-  = (replicate n " ") ++ "while " ++ (exprPrint a) ++ " do\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n " ") ++ "od\n"
+  = (replicate n ' ') ++ "while " ++ (exprPrint a) ++ " do\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "od\n"
 
 varPrint :: Var -> String
 varPrint (Id a)
