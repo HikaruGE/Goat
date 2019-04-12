@@ -19,6 +19,7 @@ indent a b
 headerPrint :: Ident -> [Param] -> String
 headerPrint a b
   = "proc" ++ " " ++ a ++ " " ++ "(" ++ (paramListPrint b) ++ ")\n"
+  -- = "proc" ++ " " ++ a ++ " " ++ "(" ++ (paramListPrint b) ++ ")"++['\n']
 
 paramListPrint :: [Param] -> String
 paramListPrint []

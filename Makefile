@@ -1,7 +1,7 @@
-KidParser: GoatParser.hs GoatAST.hs
-	ghc GoatParser.hs
+KidParser: Goat.hs GoatAST.hs
+	ghc Goat.hs
 
 clean:
 	rm -f *.o *.hi
-	rm -f GoatParser
+	rm -f Goat
 

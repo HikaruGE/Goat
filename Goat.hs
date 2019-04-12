@@ -285,25 +285,62 @@ pMain
         eof
         return p
 
+-- main :: IO ()
+-- main
+--     = do { progname <- getProgName
+--         ; args <- getArgs
+--         ; checkArgs progname args
+--         ; input <- readFile (head args)
+--         ; let output = runParser pMain 0 "" input
+--         ; case output of
+--             Right ast -> putStr (pPrint ast)
+--             Left  err -> do { putStr "Parse error at "
+--                             ; print err
+--                             }
+--         }
+
+-- checkArgs :: String -> [String] -> IO ()
+-- checkArgs _ [filename]
+--     = return ()
+-- checkArgs progname _
+--     = do { putStrLn ("Usage: " ++ progname ++ " filename\n\n")
+--         ; exitWith (ExitFailure 1)
+--         }
+
 main :: IO ()
 main
-    = do { progname <- getProgName
-        ; args <- getArgs
-        ; checkArgs progname args
-        ; input <- readFile (head args)
-        ; let output = runParser pMain 0 "" input
-        ; case output of
-            Right ast -> print (pPrint ast)
-            Left  err -> do { putStr "Parse error at "
-                            ; print err
-                            }
-        }
+  = do
+      progname <- getProgName
+      args <- getArgs
+      task <- checkArgs progname args
+      if task == Compile then
+        do
+          putStrLn "Sorry, cannot generate code yet"
+          exitWith ExitSuccess
+      else
+        do
+          let [_,filename] = args
+          input <- readFile filename
+          let output = runParser pMain 0 "" input
+          case output of
+            Right ast -> putStr (pPrint ast)
+            Left err -> do { putStr "Parse error at "; print err }
 
-checkArgs :: String -> [String] -> IO ()
+--  Slightly crude error handling 
+checkArgs :: String -> [String] -> IO Task
+checkArgs _ ['-':_]
+  = do
+      putStrLn ("Missing filename")
+      exitWith (ExitFailure 1)
 checkArgs _ [filename]
-    = return ()
+  = return Compile
+checkArgs _ ["-p", filename]
+  = return PP
 checkArgs progname _
-    = do { putStrLn ("Usage: " ++ progname ++ " filename\n\n")
-        ; exitWith (ExitFailure 1)
-        }
+  = do
+      putStrLn ("Usage: " ++ progname ++ " [-p] filename")
+      exitWith (ExitFailure 1)
 
+data Task
+    = PP | Compile
+    deriving (Eq, Show)
