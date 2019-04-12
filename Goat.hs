@@ -1,6 +1,7 @@
 module Main where
 
 import GoatAST
+import PrettyPrinter
 import Data.Char
 import Text.Parsec
 import Text.Parsec.Expr
