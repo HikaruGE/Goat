@@ -285,28 +285,6 @@ pMain
         eof
         return p
 
--- main :: IO ()
--- main
---     = do { progname <- getProgName
---         ; args <- getArgs
---         ; checkArgs progname args
---         ; input <- readFile (head args)
---         ; let output = runParser pMain 0 "" input
---         ; case output of
---             Right ast -> putStr (pPrint ast)
---             Left  err -> do { putStr "Parse error at "
---                             ; print err
---                             }
---         }
-
--- checkArgs :: String -> [String] -> IO ()
--- checkArgs _ [filename]
---     = return ()
--- checkArgs progname _
---     = do { putStrLn ("Usage: " ++ progname ++ " filename\n\n")
---         ; exitWith (ExitFailure 1)
---         }
-
 main :: IO ()
 main
   = do
