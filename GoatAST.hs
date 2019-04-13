@@ -1,7 +1,7 @@
 module GoatAST where
 
 -----------------------------------
--- Specification of an AST for Goat 
+-- Specification of an AST for Goat dsadsasdad
 -----------------------------------
 
 type Ident = String
@@ -23,8 +23,8 @@ data Decl
   | DeclArray BaseType Ident Int
   | DeclMatrix BaseType Ident Int Int
     deriving (Show, Eq)
- 
-data Stmt 
+
+data Stmt
   = Assign Var Expr
   | Read Var
   | Write Expr
@@ -46,7 +46,7 @@ data Expr
 
 data BinOp
   = Add | Sub | Mul | Div
-  | And | Or 
+  | And | Or
   | Eq | NotEq
   | Lt | LtEq
   | Gt | GtEq
@@ -61,7 +61,7 @@ data Indic
   = Val | Ref
     deriving (Show, Eq)
 
-data BaseType 
+data BaseType
   = BoolType | IntType | FloatType
     deriving (Show, Eq)
 
