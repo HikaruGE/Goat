@@ -6,7 +6,7 @@ pPrint :: Program -> String
 pPrint (Program [])
   = ""
 pPrint (Program [x])
- = procPrint x
+  = procPrint x
 pPrint (Program (x:y:ys))
   = (procPrint x) ++ "\n" ++ (pPrint (Program (y:ys)))
 
@@ -21,7 +21,6 @@ indent a b
 headerPrint :: Ident -> [Param] -> String
 headerPrint a b
   = "proc" ++ " " ++ a ++ " " ++ "(" ++ (paramListPrint b) ++ ")\n"
-  -- = "proc" ++ " " ++ a ++ " " ++ "(" ++ (paramListPrint b) ++ ")"++['\n']
 
 paramListPrint :: [Param] -> String
 paramListPrint []
@@ -59,82 +58,88 @@ declPrint (DeclMatrix a b c d)
 
 stmtPrint :: Int -> Stmt -> String
 stmtPrint n (Assign a b)
-  = (replicate n ' ') ++ (varPrint a) ++ " := " ++ (exprPrint b) ++ ";\n"
+  = (replicate n ' ') ++ (varPrint a) ++ " := " ++ (exprPrint False b) ++ ";\n"
 stmtPrint n (Read a)
   = (replicate n ' ') ++ "read " ++ (varPrint a) ++ ";\n"
 stmtPrint n (Write a)
-  = (replicate n ' ') ++ "write " ++ (exprPrint a) ++ ";\n"
+  = (replicate n ' ') ++ "write " ++ (exprPrint False a) ++ ";\n"
 stmtPrint n (Call a b)
   = (replicate n ' ') ++ "call " ++ a ++ "(" ++ (exprListPrint b) ++ ");\n"
 stmtPrint n (If a b)
-  = (replicate n ' ') ++ "if " ++ (exprPrint a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "fi\n"
+  = (replicate n ' ') ++ "if " ++ (exprPrint False a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "fi\n"
 stmtPrint n (IfElse a b c)
-  = (replicate n ' ') ++ "if " ++ (exprPrint a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "else\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) c)) ++ (replicate n ' ') ++ "fi\n"
+  = (replicate n ' ') ++ "if " ++ (exprPrint False a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "else\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) c)) ++ (replicate n ' ') ++ "fi\n"
 stmtPrint n (While a b)
-  = (replicate n ' ') ++ "while " ++ (exprPrint a) ++ " do\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "od\n"
+  = (replicate n ' ') ++ "while " ++ (exprPrint False a) ++ " do\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "od\n"
 
 varPrint :: Var -> String
 varPrint (Id a)
   = a
 varPrint (Array a b)
-  = a ++ "[" ++ (exprPrint b) ++ "]"
+  = a ++ "[" ++ (exprPrint False b) ++ "]"
 varPrint (Matrix a b c)
-  = a ++ "[" ++ (exprPrint b) ++ ", " ++ (exprPrint c) ++ "]"
+  = a ++ "[" ++ (exprPrint False b) ++ ", " ++ (exprPrint False c) ++ "]"
 
 exprListPrint :: [Expr] -> String
 exprListPrint []
   = ""
 exprListPrint [x]
-  = exprPrint x
+  = exprPrint False x
 exprListPrint (x:y:ys)
-  = (exprPrint x) ++ ", " ++ (exprListPrint (y:ys))
+  = (exprPrint False x) ++ ", " ++ (exprListPrint (y:ys))
 
-exprPrint :: Expr -> String
-exprPrint (BoolConst True)
+exprPrint :: Bool -> Expr -> String
+exprPrint _ (BoolConst True)
   = "true"
-exprPrint (BoolConst False)
+exprPrint _ (BoolConst False)
   = "false"
-exprPrint (IntConst a)
+exprPrint _ (IntConst a)
   = show a
-exprPrint (FloatConst a)
+exprPrint _ (FloatConst a)
   = show a
-exprPrint (StrConst a)
+exprPrint _ (StrConst a)
   = "\"" ++ a ++ "\""
-exprPrint (Var a)
+exprPrint _ (Var a)
   = varPrint a
-exprPrint (Unary a b)
-  = unaPrint a b
-exprPrint (Binary a b c)
-  = binPrint a b c
+exprPrint False (Unary a b)
+  = (unaPrint a) ++ (exprPrint True b)
+exprPrint True (Unary a b)
+  = "(" ++ (unaPrint a) ++ (exprPrint True b) ++ ")"
+exprPrint _ (Binary a (Unary b c) d)
+  = (exprPrint False (Unary b c)) ++ (binPrint a) ++ (exprPrint True d)
+exprPrint False (Binary a b c)
+  = (exprPrint True b) ++ (binPrint a) ++ (exprPrint True c)
+exprPrint True (Binary a b c)
+  = "(" ++ (exprPrint True b) ++ (binPrint a) ++ (exprPrint True c) ++ ")"
 
-unaPrint :: UnaOp -> Expr -> String
-unaPrint Neg a
-  = "!" ++ (exprPrint a)
-unaPrint Minus a
-  = "-" ++ (exprPrint a)
+unaPrint :: UnaOp -> String
+unaPrint Neg
+  = "!"
+unaPrint Minus
+  = "-"
 
-binPrint :: BinOp -> Expr -> Expr -> String
-binPrint Add a b
-  = "(" ++ (exprPrint a) ++ " + " ++ (exprPrint b) ++ ")"
-binPrint Sub a b
-  = "(" ++ (exprPrint a) ++ " - " ++ (exprPrint b) ++ ")"
-binPrint Mul a b
-  = "(" ++ (exprPrint a) ++ " * " ++ (exprPrint b) ++ ")"
-binPrint Div a b
-  = "(" ++ (exprPrint a) ++ " / " ++ (exprPrint b) ++ ")"
-binPrint And a b
-  = "(" ++ (exprPrint a) ++ " && " ++ (exprPrint b) ++ ")"
-binPrint Or a b
-  = "(" ++ (exprPrint a) ++ " || " ++ (exprPrint b) ++ ")"
-binPrint Eq a b
-  = "(" ++ (exprPrint a) ++ " = " ++ (exprPrint b) ++ ")"
-binPrint NotEq a b
-  = "(" ++ (exprPrint a) ++ " != " ++ (exprPrint b) ++ ")"
-binPrint Lt a b
-  = "(" ++ (exprPrint a) ++ " < " ++ (exprPrint b) ++ ")"
-binPrint LtEq a b
-  = "(" ++ (exprPrint a) ++ " <= " ++ (exprPrint b) ++ ")"
-binPrint Gt a b
-  = "(" ++ (exprPrint a) ++ " > " ++ (exprPrint b) ++ ")"
-binPrint GtEq a b
-  = "(" ++ (exprPrint a) ++ " >= " ++ (exprPrint b) ++ ")"
+binPrint :: BinOp -> String
+binPrint Add
+  = " + "
+binPrint Sub
+  = " - "
+binPrint Mul
+  = " * "
+binPrint Div
+  = " / "
+binPrint And
+  = " && "
+binPrint Or
+  = " || "
+binPrint Eq
+  = " = "
+binPrint NotEq
+  = " != "
+binPrint Lt
+  = " < "
+binPrint LtEq
+  = " <= "
+binPrint Gt
+  = " > "
+binPrint GtEq
+  = " >= "

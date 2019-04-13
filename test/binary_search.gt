@@ -19,23 +19,3 @@ proc bin_search(val int data_list, val int key)
                 fi
             od
     end
-
-proc bin_search (val int data_list, val int key)\n
-    int low;\n
-    int high;\n
-    int mid;\n
-begin\n
-    low := 0;\n
-    call len(data_list);\n
-    while (low <= high) do\n
-        mid := ((low + high) / 2);\n
-        if (data_list[mid] = key) then\n
-            low := (high + 1);\n
-            if (data_list[mid] > key) then\n
-                high := (mid - 1);\n
-            else\n
-             low := (mid + 1);\n
-            fi\n
-        fi\n
-    od\n
-end\n\n
