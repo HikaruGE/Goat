@@ -5,8 +5,10 @@ import GoatAST
 pPrint :: Program -> String
 pPrint (Program [])
   = ""
-pPrint (Program (x:xs))
-  = (procPrint x) ++ "\n" ++ (pPrint (Program xs))
+pPrint (Program [x])
+ = procPrint x
+pPrint (Program (x:y:ys))
+  = (procPrint x) ++ "\n" ++ (pPrint (Program (y:ys)))
 
 procPrint :: Proc -> String
 procPrint (Proc a b c d)
