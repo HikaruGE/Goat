@@ -90,8 +90,10 @@ exprListPrint (x:y:ys)
   = (exprPrint x) ++ ", " ++ (exprListPrint (y:ys))
 
 exprPrint :: Expr -> String
-exprPrint (BoolConst a)
-  = show a
+exprPrint (BoolConst True)
+  = "true"
+exprPrint (BoolConst False)
+  = "false"
 exprPrint (IntConst a)
   = show a
 exprPrint (FloatConst a)

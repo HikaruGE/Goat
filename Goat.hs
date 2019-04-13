@@ -301,6 +301,7 @@ main
           input <- readFile filename
           let output = runParser pMain 0 "" input
           case output of
+            -- Right ast -> print (pPrint ast)
             Right ast -> putStr (pPrint ast)
             -- Right ast -> print ast
             Left err -> do { putStr "Parse error at "; print err }

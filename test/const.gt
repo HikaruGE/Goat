@@ -23,9 +23,11 @@ proc main ()
         #newline/tab characters. 
         #However, it may contain “\n” to represent a newline character.
         write "\n";
-        write "351";
+        write 35;
+        write -3.5;
         #write "s"ad";
         #write "$%\tsa
-        #ssd\n";
-        #write "$%\t		sa";
+        #   ssd\n";
+        #write "$%		sa";
+        #write """;
     end
