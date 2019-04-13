@@ -1,7 +1,7 @@
 module GoatAST where
 
 -----------------------------------
--- Specification of an AST for Goat dsadsasdad
+-- Specification of an AST for Goat
 -----------------------------------
 
 type Ident = String
