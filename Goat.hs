@@ -82,33 +82,30 @@ pParam
 pBody :: Parser ([Decl],[Stmt])
 pBody
     = do
-        decls <- many pDecl
+        decls <- endBy pDecl semi<?> "declaration"
         reserved "begin"
-        stmts <- many1 pStmt
+        stmts <- many1 pStmt <?> "statement"
         reserved "end"
         return (decls,stmts)       
 
-pDecl = choice [try(pDeclMtx),try(pDeclAry),pDeclVar]
+pDecl = choice [try(pDeclMtx),try(pDeclAry),pDeclVar] 
 pDeclVar,pDeclAry,pDeclMtx :: Parser Decl
 pDeclVar
     = do
         ty <- pBaseType
         id <- identifier
-        semi
         return (DeclVar ty id)
 pDeclAry
     = do
         ty <- pBaseType
         id <- identifier
         int <- squares integer
-        semi
         return (DeclArray ty id (fromInteger int :: Int))
 pDeclMtx
     = do
         ty <- pBaseType
         id <- identifier
         (int1,int2) <- squares pDeclMatrix 
-        semi
         return (DeclMatrix ty id int1 int2)
 
 pDeclMatrix :: Parser (Int,Int)
@@ -119,7 +116,7 @@ pDeclMatrix
         int2 <- integer
         return (fromInteger int1 :: Int, fromInteger int2 :: Int)
 
-pStmt = choice [pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,try(pStmtIfElse),pStmtIf,pStmtWhile] <?> "statement"
+pStmt = choice [pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,try(pStmtIfElse),pStmtIf,pStmtWhile] 
 pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,pStmtIf,pStmtIfElse,pStmtWhile :: Parser Stmt
 pStmtAssign 
     = do
