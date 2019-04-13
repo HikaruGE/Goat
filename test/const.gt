@@ -30,4 +30,8 @@ proc main ()
         #   ssd\n";
         #write "$%		sa";
         #write """;
+
+        read a[2];
+        read b[3,5];
+        read x[3+a[0]*5];
     end

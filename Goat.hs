@@ -119,7 +119,7 @@ pDeclMatrix
         int2 <- integer
         return (fromInteger int1 :: Int, fromInteger int2 :: Int)
 
-pStmt = choice [pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,try(pStmtIfElse),pStmtIf,pStmtWhile]
+pStmt = choice [pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,try(pStmtIfElse),pStmtIf,pStmtWhile] <?> "statement"
 pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,pStmtIf,pStmtIfElse,pStmtWhile :: Parser Stmt
 pStmtAssign 
     = do
