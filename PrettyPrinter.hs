@@ -69,7 +69,7 @@ stmtPrint n (Call a b)
 stmtPrint n (If a b)
   = (replicate n ' ') ++ "if " ++ (exprPrint a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "fi\n"
 stmtPrint n (IfElse a b c)
-  = (replicate n ' ') ++ "if " ++ (exprPrint a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "else\n" ++ (foldl (++) "" (map (stmtPrint (n + 1)) c)) ++ (replicate n ' ') ++ "fi\n"
+  = (replicate n ' ') ++ "if " ++ (exprPrint a) ++ " then\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "else\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) c)) ++ (replicate n ' ') ++ "fi\n"
 stmtPrint n (While a b)
   = (replicate n ' ') ++ "while " ++ (exprPrint a) ++ " do\n" ++ (foldl (++) "" (map (stmtPrint (n + 4)) b)) ++ (replicate n ' ') ++ "od\n"
 
