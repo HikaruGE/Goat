@@ -61,7 +61,7 @@ stmtPrint n (Assign a b)
 stmtPrint n (Read a)
   = (replicate n ' ') ++ "read " ++ (varPrint a) ++ ";\n"
 stmtPrint n (Write a)
-  = (replicate n ' ') ++ "write" ++ (exprPrint a) ++ ";\n"
+  = (replicate n ' ') ++ "write " ++ (exprPrint a) ++ ";\n"
 stmtPrint n (Call a b)
   = (replicate n ' ') ++ "call " ++ a ++ "(" ++ (exprListPrint b) ++ ");\n"
 stmtPrint n (If a b)
@@ -95,7 +95,7 @@ exprPrint (IntConst a)
 exprPrint (FloatConst a)
   = show a
 exprPrint (StrConst a)
-  = show a
+  = "\"" ++ a ++ "\""
 exprPrint (Var a)
   = varPrint a
 exprPrint (Unary a b)

@@ -302,6 +302,7 @@ main
           let output = runParser pMain 0 "" input
           case output of
             Right ast -> putStr (pPrint ast)
+            -- Right ast -> print ast
             Left err -> do { putStr "Parse error at "; print err }
 
 --  Slightly crude error handling 
