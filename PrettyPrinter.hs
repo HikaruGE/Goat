@@ -105,8 +105,10 @@ exprPrint False (Unary a b)
   = (unaPrint a) ++ (exprPrint True b)
 exprPrint True (Unary a b)
   = "(" ++ (unaPrint a) ++ (exprPrint True b) ++ ")"
-exprPrint _ (Binary a (Unary b c) d)
+exprPrint False (Binary a (Unary b c) d)
   = (exprPrint False (Unary b c)) ++ (binPrint a) ++ (exprPrint True d)
+exprPrint True (Binary a (Unary b c) d)
+  = "(" ++ (exprPrint False (Unary b c)) ++ (binPrint a) ++ (exprPrint True d) ++ ")"
 exprPrint False (Binary a b c)
   = (exprPrint True b) ++ (binPrint a) ++ (exprPrint True c)
 exprPrint True (Binary a b c)
