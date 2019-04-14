@@ -53,7 +53,8 @@ myOpnames
 
 -----------------------------------------------------------------
 --  pProg is the topmost parsing function. It looks for a program
---  header "proc main()", followed by the program body.
+--  header "proc", followed by the program body. Any Goat program
+--  is consist of a list of "proc"s.
 -----------------------------------------------------------------
 
 pProg :: Parser Program
@@ -62,6 +63,7 @@ pProg
         procs <- many1 pProc
         return (Program procs)
 
+-- Parser for each proc, which has a header and body.
 pProc :: Parser Proc
 pProc
     = do
@@ -70,14 +72,6 @@ pProc
         params <- parens (sepBy pParam comma)
         (decls,stmts) <- pBody
         return (Proc id params decls stmts)
-
-pParam :: Parser Param
-pParam
-    = do
-        indic <- pIndic
-        ty <- pBaseType
-        id <- identifier
-        return (Param indic ty id)
 
 pBody :: Parser ([Decl],[Stmt])
 pBody
@@ -88,6 +82,17 @@ pBody
         reserved "end"
         return (decls,stmts)       
 
+-- Parser for each parameter.
+pParam :: Parser Param
+pParam
+    = do
+        indic <- pIndic
+        ty <- pBaseType
+        id <- identifier
+        return (Param indic ty id)
+
+-- Parser for each declaration, the size of static array
+-- and matrix has to be integer literal.
 pDecl = choice [try(pDeclMtx),try(pDeclAry),pDeclVar] 
 pDeclVar,pDeclAry,pDeclMtx :: Parser Decl
 pDeclVar
@@ -116,6 +121,7 @@ pDeclMatrix
         int2 <- integer
         return (fromInteger int1 :: Int, fromInteger int2 :: Int)
 
+-- Parser for each statement, each type of statement has a parser.
 pStmt = choice [pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,try(pStmtIfElse),pStmtIf,pStmtWhile] 
 pStmtAssign,pStmtRead,pStmtWrite,pStmtCall,pStmtIf,pStmtIfElse,pStmtWhile :: Parser Stmt
 pStmtAssign 
@@ -191,8 +197,8 @@ pBaseType
     <|>
     do { reserved "float"; return FloatType }
 
+-- A variable can be a normal variable or array or matrix.
 pVar = choice[try(pVarMa),try(pVarAr),pVarId]
-
 pVarId,pVarAr,pVarMa :: Parser Var
 pVarId
     = do
@@ -217,6 +223,8 @@ pMatrix
         expr2 <- pExpr
         return (expr1,expr2)
 
+-- Parser for expression, the precedence and association of operators 
+-- are defined in a table as below.
 pExprOp = choice [parens pExpr, pExprConst, pExprVar]
 pExpr, pExprConst, pExprVar :: Parser Expr
 pExpr = buildExpressionParser precedence pExprOp
@@ -240,20 +248,27 @@ precedence = [ [Prefix (reservedOp "-" >> return (Unary Minus))]
 pExprConst = do{const <- pConst;return (const)}
 pExprVar = do{var <- pVar;return (Var var)}
 
+-- Parser for const, including bool,float,int or string.
 pConst = choice [pBool, try(pFloat), pInt, pString]
 pBool, pInt, pFloat, pString :: Parser Expr
 pBool =
     do {reserved "true";return (BoolConst True)}
     <|>
     do {reserved "false";return (BoolConst False)}
+    <?>
+    "bool"
 pInt =
     do 
         int <- integer
         return (IntConst (fromInteger int :: Int))
+        <?>
+        "int"
 pFloat =
     do 
         f <- float
         return (FloatConst (realToFrac f :: Float))
+        <?>
+        "float"
 pString
     = do
         char '"'
@@ -263,6 +278,8 @@ pString
         <?>
         "string"
 
+-- Used to judge if a string has more than one line or tab
+-- or quote.
 isString :: Char -> Bool
 isString c = case c of 
             '\n' -> False
@@ -282,6 +299,9 @@ pMain
         eof
         return p
 
+-- Command Line Config
+-- "-p" is used for pretty-print
+-- No command means compile. (TODO)
 main :: IO ()
 main
   = do
