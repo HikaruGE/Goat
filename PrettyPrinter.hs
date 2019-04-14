@@ -103,8 +103,10 @@ exprPrint _ (Var a)
   = varPrint a
 exprPrint False (Unary a b)
   = (unaPrint a) ++ (exprPrint True b)
-exprPrint True (Unary a b)
-  = "(" ++ (unaPrint a) ++ (exprPrint True b) ++ ")"
+exprPrint True (Unary Neg a)
+  = (unaPrint Neg) ++ (exprPrint True a)
+exprPrint True (Unary Minus a)
+  = "(" ++ (unaPrint Minus) ++ (exprPrint True a) ++ ")"
 exprPrint False (Binary a (Unary b c) d)
   = (exprPrint False (Unary b c)) ++ (binPrint a) ++ (exprPrint True d)
 exprPrint True (Binary a (Unary b c) d)
