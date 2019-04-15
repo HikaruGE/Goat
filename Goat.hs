@@ -224,7 +224,9 @@ pMatrix
         return (expr1,expr2)
 
 -- Parser for expression, the precedence and association of operators 
--- are defined in a table as below.
+-- are defined in a table as below, it's a list of list, the precedence
+-- of outer list is from high to low, in the inner list, the precedence
+-- is the same.
 pExprOp = choice [parens pExpr, pExprConst, pExprVar]
 pExpr, pExprConst, pExprVar :: Parser Expr
 pExpr = buildExpressionParser precedence pExprOp
