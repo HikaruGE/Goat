@@ -58,7 +58,7 @@ data UnaOp
     deriving (Show, Eq)
 
 data Indic
-  = Val | Ref
+  = Val | Ref 
     deriving (Show, Eq)
 
 data BaseType

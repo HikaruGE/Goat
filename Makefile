@@ -1,4 +1,4 @@
-KidParser: Goat.hs GoatAST.hs
+Goat: Goat.hs GoatAST.hs PrettyPrinter.hs
 	ghc Goat.hs
 
 clean:

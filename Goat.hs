@@ -20,7 +20,7 @@ lexer
         { Q.commentLine     = "#"
         , Q.nestedComments  = True
         , Q.identStart      = letter
-        , Q.identLetter     = alphaNum <|> oneOf "_'"
+        , Q.identLetter     = alphaNum <|> oneOf "_'" <?> "identifier"
         , Q.opStart         = oneOf "+-*/:><=!|&"
         , Q.opLetter        = oneOf "|&="
         , Q.reservedNames   = myReserved
