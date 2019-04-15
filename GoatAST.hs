@@ -6,24 +6,29 @@ module GoatAST where
 
 type Ident = String
 
+-- Data type for a Goat program
 data Program
   = Program [Proc]
     deriving (Show, Eq)
 
+-- Data type for a procedure
 data Proc
   = Proc Ident [Param] [Decl] [Stmt]
     deriving (Show, Eq)
 
+-- Data type for a formal parameter in the header of a procedure
 data Param
   = Param Indic BaseType Ident
     deriving (Show, Eq)
 
+-- Data type for a declaration
 data Decl
   = DeclVar BaseType Ident
   | DeclArray BaseType Ident Int
   | DeclMatrix BaseType Ident Int Int
     deriving (Show, Eq)
 
+-- Data type for a statement
 data Stmt
   = Assign Var Expr
   | Read Var
@@ -34,6 +39,7 @@ data Stmt
   | While Expr [Stmt]
     deriving (Show, Eq)
 
+-- Data type for an expression
 data Expr
   = BoolConst Bool
   | IntConst Int
@@ -44,6 +50,7 @@ data Expr
   | Binary BinOp Expr Expr
     deriving (Show, Eq)
 
+-- Data type for a binary operator
 data BinOp
   = Add | Sub | Mul | Div
   | And | Or
@@ -52,19 +59,23 @@ data BinOp
   | Gt | GtEq
     deriving (Show, Eq)
 
+-- Data type for a unary operator
 data UnaOp
   = Neg
   | Minus
     deriving (Show, Eq)
 
+-- Data type for a parameter passing indicator
 data Indic
   = Val | Ref 
     deriving (Show, Eq)
 
+-- Data type for a base type
 data BaseType
   = BoolType | IntType | FloatType
     deriving (Show, Eq)
 
+-- Data type for a variable
 data Var
   = Id Ident
   | Array Ident Expr
