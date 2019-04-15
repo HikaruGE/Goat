@@ -321,7 +321,9 @@ main
             -- Right ast -> print (pPrint ast)
             Right ast -> putStr (pPrint ast)
             -- Right ast -> print ast
-            Left err -> do { putStr "Parse error at "; print err }
+            Left err -> do {putStr "Parse error at "; 
+                            print err; 
+                            exitWith (ExitFailure 2)}
 
 --  Slightly crude error handling 
 checkArgs :: String -> [String] -> IO Task
