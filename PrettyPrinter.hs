@@ -139,14 +139,14 @@ exprPrint False (Binary a b c)
 exprPrint True (Binary a b c)
   = "(" ++ (exprPrint True b) ++ (binPrint a) ++ (exprPrint True c) ++ ")"
 
--- Function which transforms a unary operator into a string
+-- Function which transforms a unary operator into a string.
 unaPrint :: UnaOp -> String
 unaPrint Neg
   = "!"
 unaPrint Minus
   = "-"
 
--- Function which transform a binary operator into a string
+-- Function which transform a binary operator into a string.
 binPrint :: BinOp -> String
 binPrint Add
   = " + "
