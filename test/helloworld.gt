@@ -1,0 +1,11 @@
+proc main()
+
+begin
+
+write "hello world\n";
+write true;
+write false;
+write 3.1415;
+write 996;
+
+end

@@ -2,7 +2,10 @@ module Main where
 
 import GoatAST
 import PrettyPrinter
+import CodeGen
+import SymTable
 import Data.Char
+import qualified Data.Map as Map
 import Text.Parsec
 import Text.Parsec.Expr
 import Text.Parsec.Language (emptyDef)
@@ -312,8 +315,25 @@ main
       task <- checkArgs progname args
       if task == Compile then
         do
-          putStrLn "Sorry, cannot generate code yet"
-          exitWith ExitSuccess
+            let [filename] = args
+            input <- readFile filename
+            let output = runParser pMain 0 "" input
+            let map = "test" --先传一个空的
+            case output of
+              Right ast -> putStr (programCode ast map)
+              Left err -> do {putStr "Parse error at "; 
+                              print err; 
+                              exitWith (ExitFailure 2)}
+      else if task == AST then
+        do
+            let [_,filename] = args
+            input <- readFile filename
+            let output = runParser pMain 0 "" input
+            case output of
+              Right ast -> print ast
+              Left err -> do {putStr "Parse error at "; 
+                              print err; 
+                              exitWith (ExitFailure 2)}
       else
         do
           let [_,filename] = args
@@ -337,11 +357,13 @@ checkArgs _ [filename]
   = return Compile
 checkArgs _ ["-p", filename]
   = return PP
+checkArgs _ ["-a", filename]
+  = return AST
 checkArgs progname _
   = do
       putStrLn ("Usage: " ++ progname ++ " [-p] filename")
       exitWith (ExitFailure 1)
 
 data Task
-    = PP | Compile
+    = PP | Compile | AST
     deriving (Eq, Show)

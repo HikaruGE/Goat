@@ -1,4 +1,4 @@
-Goat: Goat.hs GoatAST.hs PrettyPrinter.hs
+Goat: Goat.hs GoatAST.hs PrettyPrinter.hs CodeGen.hs SymTable.hs
 	ghc Goat.hs
 
 clean:
