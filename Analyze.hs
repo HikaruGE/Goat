@@ -1,8 +1,18 @@
 import GoatAST
 import SymTable
 
-genSymTable :: Program -> ProcTable
-genSymTable (Program m)
+genCallTable :: Program -> CallTable
+genCallTable (Program m)
+  = genCall Map.empty m
+
+genCall ::
+genCall m []
+  = m
+genCall m x:xs
+  = case x of (Proc id fp _ _) -> genCall (Map.insert id fp) xs
+
+genProcTable :: Program -> ProcTable
+genProcTable (Program m)
   = genProc Map.empty m
 
 genProc :: ProcTable -> [Proc] -> ProcTable

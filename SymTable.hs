@@ -2,6 +2,12 @@ import qualified Data.Map as Map
 import GoatAST
 import Analyze
 
+type SymTable
+  = (CallTable, ProcTable)
+
+type CallTable
+  = Map.Map Ident [Param]
+
 type ProcTable
   = Map.Map Ident VarTable
 
