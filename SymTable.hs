@@ -1,111 +1,44 @@
-module SymTable where
-
 import qualified Data.Map as Map
 import GoatAST
--- import Analyze
+import Analyze
 
--- type ProcTable = String
+type ProcTable
+  = Map.Map Ident VarTable
 
-data ProcTable
-  = Map Ident ProcInfo
+type VarTable
+  = Map.Map Ident VarInfo
 
--- formal parameter table, local variable table
-data ProcInfo
-  = ProcInfo FPTable LVTable
+-- True represents local variable, False represents formal parameter
+-- Int pair represents the index bounds, 0 if this dimension not needed
+-- (0, 0) represents singleton variable
+-- (a, 0) represents array, where a >= 1
+-- (a, b) represents matrix, where a, b >= 1
+data VarInfo
+  = VarInfo BaseType SlotNum Bool (Int, Int) Indic
 
-data FPTable
-  = Map Ident FPInfo
-
--- type, parameter passing method, slot number
-data FPInfo
-  = FPInfo BaseType Indic Int
-
-data LVTable
-  = Map Ident LVInfo
-
--- type, bounds for arrays and matrices(1 for singleton variable), starting slot number
-data LVInfo
-  = LVInfo BaseType Int Int
-
-initProc :: ProcTable
-initProc
-  = Map.empty
-
-initFP :: FPTable
-initFP
-  = Map.empty
-
-initLV :: LVTable
-initLV
-  = Map.empty
-
---addProc :: Ident -> ProcInfo -> ProcTable -> ProcTable
---addProc k v m
---  = Map.insert k v m
-
-addProc :: Proc -> ProcTable -> ProcTable
-addProc x@(Proc id _ _ _) m
-  = Map.insert id (genProcInfo x) m
-
---addFP :: Ident -> FPInfo -> FPTable -> FPTable
---addFP k v m
---  = Map.insert k v m
-
-addFP :: Param -> FPTable -> FPTable
-addFP x@(Param _ _ id) m
-  = Map.insert id (genFPInfo x) m
-
---addLV :: Ident -> LVInfo -> LVTable -> LVTable
---addLV k v m
---  = Map.insert k v m
-
-addLV :: Decl -> LVTable -> LVTable
-addLV x@(DeclVar _ id) m
-  = Map.insert id (genLVInfo x) m
-addLV x@(DeclArray _ id _) m
-  = Map.insert id (genLVInfo x) m
-addLV x@(DeclMatrix _ id _ _) m
-  = Map.insert id (genLVInfo x) m
-
--- look up names that is guaranteed to be present
-getProcInfo :: Ident -> ProcTable -> ProcInfo
-getProcInfo id table
+-- look up a procedure name that is guaranteed to be present, from the global symbol table
+getVarTable :: Ident -> ProcTable -> VarTable
+getVarTable id table
   = m
     where (Just m) = Map.lookup id table
 
-getFPTable :: Ident -> ProcTable -> FPTable
-getFPTable id table
-  = m
-    where (ProcInfo m _) = getProcInfo id table
-
-getFPInfo :: Ident -> FPTable -> FPInfo
-getFPInfo id table
-  = m
-    where (Just m) = Map.lookup id table
-
-getLVTable :: Ident -> ProcTable -> LVTable
-getLVTable id table
-  = m
-    where (ProcInfo _ m) = getProcInfo id table
-
-getLVInfo :: Ident -> LVTable -> LVInfo
-getLVInfo id table
+-- look up a variable name that is guaranteed to be present, from the local symbol table
+getVarInfo :: Ident -> VarTable -> VarInfo
+getVarInfo id table
   = m
     where (Just m) = Map.lookup id table
 
 -- calculate the size of the stack frame needed for a procedure
-getSize :: Ident -> ProcTable -> Int
-getSize id table
-  = (getFPSize id table) + (getLVSize id table)
+getSize :: VarTable -> Int
+getSize t
+  = Map.fold sumSize 0 t
 
-getFPSize :: Ident -> ProcTable -> Int
-getFPSize id table
-  = Map.size (getFPTable id table)
-
-getLVSize :: Ident -> ProcTable -> Int
-getLVSize id table
-  = Map.fold sumSize 0 (getLVTable id table)
-
-sumSize :: LVInfo -> Int -> Int
-sumSize (LVInfo _ m _) n
-  = m + n
+sumSize :: VarInfo -> Int -> Int
+sumSize (VarInfo _ _ False _ _) n
+  = n + 1
+sumSize (VarInfo _ _ True (0, 0) _) n
+  = n + 1
+sumSize (VarInfo _ _ True (a, 0) _) n
+  = n + a
+sumSize (VarInfo _ _ True (a, b) _) n
+  = n + a * b
