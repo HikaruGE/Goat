@@ -38,7 +38,6 @@ procsCode x:xs t
 
 procCode :: Proc -> VarTable -> String
 procCode (Proc id x y z) t
-<<<<<<< HEAD
     =   (procLabel id) ++
         "    push_stack_frame 1\n" ++
         "#decl\n" ++
@@ -51,11 +50,6 @@ procCode (Proc id x y z) t
 --   = (procLabel id) ++ (prolog n) ++ (paramsCode x t 0) ++ (declsCode y t m) ++ (stmtsCode z t) ++ (epilog n)
 --     where n = getSize t
 --           m = length x
-=======
-  = (procLabel id) ++ (prolog n) ++ (paramsCode x t 0) ++ (declsCode y t m) ++ (stmtsCode z t 0) ++ (epilog n)
-    where n = getSize t
-          m = length x
->>>>>>> 9745f4afcceb4b1d3755812061a1724c8794917f
 
 prolog :: Int -> String
 prolog n
