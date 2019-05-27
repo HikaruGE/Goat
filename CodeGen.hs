@@ -1,10 +1,26 @@
+module CodeGen where
+
 import GoatAST
 import SymTable
 import Analyze
 
-programCode :: Program -> ProcTable -> String
+import qualified Data.Map as Map
+
+type Reg = Int
+
+data BinOpClass 
+    = Arithmetic | Comparision | Logic
+
+compile :: Program -> String
+compile ast = 
+    let t = initTables in
+        programCode ast t
+
+programCode :: Program -> SynTables -> String
 programCode (Program m) t
-  = "    call proc_main\n    halt\n" ++ (procsCode m t)
+  = "    call proc_main\n" ++
+    "    halt\n" ++ 
+    (procsCode m t)
 
 blockLabel :: String -> String
 blockLabel s
@@ -22,9 +38,18 @@ procsCode x:xs t
 
 procCode :: Proc -> VarTable -> String
 procCode (Proc id x y z) t
-  = (procLabel id) ++ (prolog n) ++ (paramsCode x t 0) ++ (declsCode y t m) ++ (stmtsCode z t) ++ (epilog n)
-    where n = getSize t
-          m = length x
+    =   (procLabel id) ++
+        "    push_stack_frame 1\n" ++
+        "#decl\n" ++
+        (stmtsCode z t) ++
+        "    pop_stack_frame 1\n" ++
+        "    return\n"
+
+-- procCode :: Proc -> VarTable -> String
+-- procCode (Proc id x y z) t
+--   = (procLabel id) ++ (prolog n) ++ (paramsCode x t 0) ++ (declsCode y t m) ++ (stmtsCode z t) ++ (epilog n)
+--     where n = getSize t
+--           m = length x
 
 prolog :: Int -> String
 prolog n
@@ -96,90 +121,22 @@ stmtsCode [] _
 stmtsCode x:xs t
   = (stmtCode x t) ++ (stmtsCode xs t)
 
-stmtCode :: Stmt -> VarTable -> String
-stmtCode (Write (Const (BoolConst True))) _
-  = "    int_const r0, 1\n    call_builtin print_bool\n"
-stmtCode (Write (Const (BoolConst False))) _
-  = "    int_const r0, 0\n    call_builtin print_bool\n"
-stmtCode (Write (Const (IntConst n))) _
-  = "    int_const r0, " ++ (show n) ++ "\n    call_builtin print_int\n"
-stmtCode (Write (Const (FloatConst n))) _
-  = "    real_const r0, " ++ (show n) ++ "\n    call_builtin print_real\n"
-stmtCode (Write (Cons t (StrConst s))) _
-  = "    string_const r0, \"" ++ s ++ "\"\n    call_builtin print_string\n"
-stmtCode (Write (Var (Id id))) t
-  = --call the function to generate expression code
 
-stmtCode (Call id x)
-  = -- call the function to generate expression code and store the results in register r0, r1...
+-- stmtCode (Call id x)
+--   = -- call the function to generate expression code and store the results in register r0, r1...
     -- the expression generator needs to consider whether val or ref, then load or load_address
     -- ++ "    call proc_" ++ id ++ "\n"
     
-    
-module CodeGen where
 
-import GoatAST
-import SymbolTable
--- import Analyze
-
-import qualified Data.Map as Map
-
-type Reg = Int
-
-data BinOpClass 
-    = Arithmetic | Comparision | Logic
-
-compile :: Program -> String
-compile ast = 
-    let t = initTables in
-        programCode ast t
-
-programCode :: Program -> SynTables -> String
-programCode (Program m) t
-  = "    call proc_main\n" ++
-    "    halt\n" ++ 
-    (procsCode m t)
-
-procsCode :: [Proc] -> SynTables -> String
-procsCode [] _
-    = ""
-procsCode (x:xs) t
-    = (procCode x t) ++ (procsCode xs t)
-
-procCode :: Proc -> SynTables -> String
-procCode (Proc id x y z) t
-    =   (procLabel id) ++
-        "    push_stack_frame 1\n" ++
-        "#decl\n" ++
-        (stmtsCode z t) ++
-        "    pop_stack_frame 1\n" ++
-        "    return\n"
-
-prolog :: Int -> String
-prolog n = "    push_stack_frame " ++ (show n) ++ "\n"
 
 epilog :: Int -> String
 epilog n = "    pop_stack_frame " ++ (show n) ++ 
            "\n    return\n"
-          
-paramsCode :: [Param] -> SynTables -> Int -> String
-paramsCode [] _ _
-    = ""
-paramsCode (x:xs) t n
-    = (paramCode x t n) ++ (paramsCode xs t (n + 1))
 
 paramCode :: Param -> SynTables -> Int -> String
 paramCode _ _ n
     = "    store " ++ s ++ ", r" ++ s ++ "\n"
     where s = show n
-
-blockLabel :: String -> String
-blockLabel s
-    = "label_" ++ s ++ ":\n"
-
-procLabel :: String -> String
-procLabel s
-    = "proc_" ++ s ++ ":\n"
 
 stmtsCode :: [Stmt] -> SynTables -> String
 stmtsCode [] _
@@ -195,7 +152,7 @@ stmtCode (Write expr) t =
         code ++ 
         "    call_builtin " ++ (writeBuiltin ty) ++ "\n"
 
-
+        
 exprCode :: Expr -> Reg -> (String, Reg, BaseType)
 exprCode (BoolConst b) r = ("    int_const" ++ regToStr(r) ++ ", "++ show(val) ++"\n",
                                 r,
