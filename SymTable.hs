@@ -14,6 +14,9 @@ type ProcTable
 type VarTable
   = Map.Map Ident VarInfo
 
+type SlotNum
+  = Int
+
 -- True represents local variable, False represents formal parameter
 -- Int pair represents the index bounds, 0 if this dimension not needed
 -- (0, 0) represents singleton variable
@@ -31,6 +34,12 @@ getVarTable id table
 -- look up a variable name that is guaranteed to be present, from the local symbol table
 getVarInfo :: Ident -> VarTable -> VarInfo
 getVarInfo id table
+  = m
+    where (Just m) = Map.lookup id table
+
+-- look up the formal parameter list for a procedure, used in semantic analysis of procedure call
+getCallList :: Ident -> CallTable -> [Param]
+getCallList id table
   = m
     where (Just m) = Map.lookup id table
 
