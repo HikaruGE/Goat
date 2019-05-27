@@ -72,8 +72,9 @@ data Indic
 
 -- Data type for a base type.
 data BaseType
-  = BoolType | IntType | FloatType
+  = BoolType | IntType | FloatType | StrType
     deriving (Show, Eq)
+
 
 -- Data type for a variable.
 data Var

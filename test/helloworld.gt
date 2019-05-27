@@ -3,9 +3,12 @@ proc main()
 begin
 
 write "hello world\n";
-write true;
-write false;
-write 3.1415;
-write 996;
+write true;write "\n";
+write false;write "\n";
+write 3.1415;write "\n";
+write 996;write "\n";
+write -(-(-1));write "\n";
+
+#write 1+2+3*4;write "\n";
 
 end

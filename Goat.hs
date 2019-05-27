@@ -3,7 +3,7 @@ module Main where
 import GoatAST
 import PrettyPrinter
 import CodeGen
-import SymTable
+-- import SymTable
 import Data.Char
 import qualified Data.Map as Map
 import Text.Parsec
@@ -318,9 +318,8 @@ main
             let [filename] = args
             input <- readFile filename
             let output = runParser pMain 0 "" input
-            let map = "test" --先传一个空的
             case output of
-              Right ast -> putStr (programCode ast map)
+              Right ast -> putStr (compile ast)
               Left err -> do {putStr "Parse error at "; 
                               print err; 
                               exitWith (ExitFailure 2)}
