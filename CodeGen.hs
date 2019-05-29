@@ -1,49 +1,91 @@
 module CodeGen where
 
 import GoatAST
-import SymTable
-import Analyze
-
+import SymbolTable
+-- import Analyze
 import qualified Data.Map as Map
 
 type Reg = Int
+type LabelNum = Int
+
+type LocalState = (CallTable, VarTable, Ident, LabelNum)
+incLabel :: LocalState -> LocalState
+incLabel (ct, vt, id, l) = (ct, vt, id, (l+1))
 
 data BinOpClass 
     = Arithmetic | Comparision | Logic
 
-compile :: Program -> String
-compile ast = 
-    let t = initTables in
-        programCode ast t
+programCode :: Program -> SymTable -> String
+programCode (Program m) t@(c,p)
+    =   show(Map.lookup "main" c) ++"\n"++
+        show(Map.lookup "omg" c) ++"\n"++
+        "    call proc_main\n" ++
+        "    halt\n" ++ 
+        (procsCode m t)
 
-programCode :: Program -> SynTables -> String
-programCode (Program m) t
-  = "    call proc_main\n" ++
-    "    halt\n" ++ 
-    (procsCode m t)
+procsCode :: [Proc] -> SymTable -> String
+procsCode procs st = concatMap (procCode st) procs
 
-blockLabel :: Int -> String
-blockLabel n
-  = "label_" ++ (show n) ++ ":\n"
+procCode :: SymTable -> Proc -> String
+procCode (callt, proct) (Proc id params decls stmts)
+    =   
+        let 
+            t@(t1,t2,_,_) = (callt, (getVarTable id proct), id, 0)  -- Todo
+        in
+            -- show(Map.lookup "x1" t2) ++"\n"++
+            -- show(Map.lookup "x2" t2) ++"\n"++
+            -- show(Map.lookup "x3" t2) ++"\n"++
+            -- "\n"++"\n"++
+            (procLabel id) ++
+            (prolog t) ++
+            (declsCode decls t) ++
+            fst(stmtsCode stmts t) ++
+            (epilog t)
 
-procLabel :: String -> String
-procLabel s
-  = "proc_" ++ s ++ ":\n"
+declsCode :: [Decl] -> LocalState -> String
+declsCode decls state = concatMap (declCode state) decls
 
-procsCode :: [Proc] -> ProcTable -> String
-procsCode [] _
-  = ""
-procsCode x:xs t
-  = case x of (Proc id _ _ _) -> (procCode x (getVarTable id t)) ++ (procsCode xs t)
+declCode :: LocalState -> Decl -> String
+declCode (_, vt, _, _) decl =
+    case decl of
+        DeclVar ty varid ->
+            let
+                initDecl = defaultValueCode ty
+                slotNum = getSlotNum(lookupVarTable varid vt)
+                store = defaultStoreCode slotNum
+            in
+                initDecl ++ store
 
-procCode :: Proc -> VarTable -> String
-procCode (Proc id x y z) t
-    =   (procLabel id) ++
-        "    push_stack_frame 1\n" ++
-        "#decl\n" ++
-        (stmtsCode z t) ++
-        "    pop_stack_frame 1\n" ++
-        "    return\n"
+        DeclArray ty varid lenth ->
+            let
+                initDecl = defaultValueCode ty
+                slotNum = getSlotNum(lookupVarTable varid vt)
+                store = arrayDeclCode slotNum lenth
+            in
+                initDecl ++ store
+        
+        DeclMatrix ty varid len1 len2 ->
+            let
+                initDecl = defaultValueCode ty
+                slotNum = getSlotNum(lookupVarTable varid vt)
+                store = arrayDeclCode slotNum (len1*len2)
+            in
+                initDecl ++ store
+
+defaultValueCode :: BaseType -> String
+defaultValueCode BoolType = "    int_const r0, 0\n"
+defaultValueCode IntType = "    int_const r0, 0\n"
+defaultValueCode FloatType = "    real_const r0, 0.0\n"
+
+defaultStoreCode :: SlotNum -> String
+defaultStoreCode slotNum = "    store " ++ show(slotNum) ++ ", r0\n"
+
+arrayDeclCode :: Int -> Int -> String -- start slot, length
+arrayDeclCode slot 0 = ""
+arrayDeclCode slot len = (defaultStoreCode slot) ++ (arrayDeclCode (slot+1) (len-1))
+
+-- stmtsCode :: [Stmt] -> LocalState -> String
+-- stmtsCode stmts gt = concatMap (stmtCode gt) stmts
 
 -- procCode :: Proc -> VarTable -> String
 -- procCode (Proc id x y z) t
@@ -51,149 +93,347 @@ procCode (Proc id x y z) t
 --     where n = getSize t
 --           m = length x
 
-prolog :: Int -> String
-prolog n
-  = "    push_stack_frame " ++ (show n) ++ "\n"
 
-epilog :: Int -> String
-epilog n
-  = "    pop_stack_frame " ++ (show n) ++ "\n    return\n"
 
--- Code generator for a list of formal parameters
-paramsCode :: [Param] -> VarTable -> SlotNum -> String
-paramsCode [] _ _
-  = ""
-paramsCode x:xs t n
-  = (paramCode x t n) ++ (paramsCode xs t (n + 1))
+prolog :: LocalState -> String
+prolog (_, vt, _, _) = "    push_stack_frame " ++ (show (getSize vt)) ++ "\n"
 
-paramCode :: Param -> VarTable -> SlotNum -> String
-paramCode _ _ n
-  = "    store " ++ s ++ ", r" ++ s ++ "\n"
-    where s = show n
+epilog :: LocalState -> String
+epilog (_, vt, _, _) = "    pop_stack_frame " ++ (show (getSize vt)) ++ "\n    return\n"
+          
+-- paramsCode :: [Param] -> LocalState -> Int -> String
+-- paramsCode [] _ _
+--     = ""
+-- paramsCode (x:xs) t n
+--     = (paramCode x t n) ++ (paramsCode xs t (n + 1))
 
--- Code generator for a list of declarations
-declsCode :: [Decl] -> VarTable -> SlotNum -> String
-declsCode [] _ _
-  = ""
-declsCode x:xs t n
-  = case x of (DeclVar _ _) -> (declCode x t n) ++ (declsCode xs t (n + 1))
-              (DeclArray _ _ a) -> (declCode x t n) ++ (declsCode xs t (n + a))
-              (DeclMatrix _ _ a b) -> (declCode x t n) ++ (declsCode xs t (n + a * b))
+-- paramCode :: Param -> LocalState -> Int -> String
+-- paramCode _ _ n
+--     = "    store " ++ s ++ ", r" ++ s ++ "\n"
+--     where s = show n
 
-declCode :: Decl -> VarTable -> SlotNum -> String
-declCode x t n
-  = case x of (DeclVar _ _) -> declVar x t n
-              (DeclArray _ _ a) -> declArray x t n a
-              (DeclMatrix _ _ a b) -> declMatrix x t n (a * b)
+blockLabel :: Ident -> String -> String
+blockLabel id s
+    = id ++ "_label_" ++ s ++ ":\n"
 
-declVar :: Decl -> VarTable -> SlotNum -> String
-declVar (DeclVar IntType _) _ n
-  = "    int_const r0, 0\n    store " ++ (show n) ++ ", r0\n"
-declVar (DeclVar FloatType _) _ n
-  = "    real_const r0, 0.0\n    store " ++ (show n) ++ ", r0\n"
-declVar (DeclVar BoolType _) _ n
-  = "    int_const r0, 0\n    store " ++ (show n) ++ ", r0\n"
-
-declArray :: Decl -> VarTable -> SlotNum -> Int -> String
-declArray _ _ _ 0
-  = ""
-declArray x@(DeclArray IntType _ _) t n m
-  = "    int_const r0, 0\n    store " ++ (show n) ++ ", r0\n" ++ declArray x t (n + 1) (m - 1)
-declArray x@(DeclArray FloatType _ _) t n m
-  = "    real_const r0, 0.0\n    store " ++ (show n) ++ ", r0\n" ++ declArray x t (n + 1) (m - 1)
-declArray x@(DeclArray BoolType _ _) t n m
-  = "    int_const r0, 0\n    store " ++ (show n) ++ ", r0\n" ++ declArray x t (n + 1) (m - 1)
-
-declMatrix :: Decl -> VarTable -> SlotNum -> Int -> String
-declMatrix _ _ _ 0
-  = ""
-declMatrix x@(DeclMatrix IntType _ _) t n m
-  = "    int_const r0, 0\n    store " ++ (show n) ++ ", r0\n" ++ declMatrix x t (n + 1) (m - 1)
-declMatrix x@(DeclMatrix FloatType _ _) t n m
-  = "    real_const r0, 0.0\n    store " ++ (show n) ++ ", r0\n" ++ declMatrix x t (n + 1) (m - 1)
-declMatrix x@(DeclMatrix BoolType _ _) t n m
-  = "    int_const r0, 0\n    store " ++ (show n) ++ ", r0\n" ++ declMatrix x t (n + 1) (m - 1)
-
-type LabelNum
-  = Int
+procLabel :: String -> String
+procLabel s
+    = "proc_" ++ s ++ ":\n"
 
 -- Code generator for a list of statements
-stmtsCode :: [Stmt] -> VarTable -> LabelNum -> String
-stmtsCode [] _ _
-  = ""
-stmtsCode x:xs t n
-  = case x of (stmtCode x t) ++ (stmtsCode xs t)
-
-
--- stmtCode (Call id x)
---   = -- call the function to generate expression code and store the results in register r0, r1...
-    -- the expression generator needs to consider whether val or ref, then load or load_address
-    -- ++ "    call proc_" ++ id ++ "\n"
-    
-
-
-epilog :: Int -> String
-epilog n = "    pop_stack_frame " ++ (show n) ++ 
-           "\n    return\n"
-
-paramCode :: Param -> SynTables -> Int -> String
-paramCode _ _ n
-    = "    store " ++ s ++ ", r" ++ s ++ "\n"
-    where s = show n
-
-stmtsCode :: [Stmt] -> SynTables -> String
-stmtsCode [] _
-    = ""
-stmtsCode (x:xs) t
-    = (stmtCode x t) ++ (stmtsCode xs t)
-
-stmtCode :: Stmt -> SynTables -> String
-stmtCode (Write expr) t = 
-    let 
-        (code, reg, ty) = exprCode expr 0
-    in
-        code ++ 
-        "    call_builtin " ++ (writeBuiltin ty) ++ "\n"
-
-        
-exprCode :: Expr -> Reg -> (String, Reg, BaseType)
-exprCode (BoolConst b) r = ("    int_const" ++ regToStr(r) ++ ", "++ show(val) ++"\n",
-                                r,
-                                BoolType)
-                            where 
-                                val = boolToInt b
-exprCode (IntConst i) r = ("    int_const" ++ regToStr(r) ++ ", "++ show(i) ++"\n",
-                                r,
-                                IntType)
-exprCode (FloatConst f) r = ("    real_const" ++ regToStr(r) ++ ", "++ show(f) ++"\n",
-                                r,
-                                FloatType)
-exprCode (StrConst s) r = ("    string_const" ++ regToStr(r) ++ ", \""++ s ++"\"\n",
-                                r,
-                                StrType)
-
-exprCode (Unary unaOp expr) r = 
+stmtsCode :: [Stmt] -> LocalState -> (String, LocalState)
+stmtsCode [] state 
+    = ("",state)
+stmtsCode (x:xs) state = 
     let
-        (code, reg, ty) = exprCode expr r
+        (code, newstate) = stmtCode x state
+        (code',newstate1) = stmtsCode xs newstate
+    in
+        (code ++ code',
+        newstate1)
+
+
+
+-- stmtsCode :: [Stmt] -> LocalState -> String
+-- stmtsCode stmts gt = concatMap (stmtCode gt) stmts
+
+stmtCode :: Stmt -> LocalState -> (String, LocalState)
+stmtCode (Assign var rExpr) state@(_, varTable, _, _) =
+    case var of
+        (Id varid) -> 
+            let
+                varInfo = lookupVarTable varid varTable
+                (code, r, ty) = exprCode rExpr 0 state
+            in
+                (code ++
+                 (storeSingleVar varid varInfo r),
+                    state)
+
+        (Array varid lExpr) -> 
+            let
+                r0 = 0
+                r1 = 1
+                varInfo = lookupVarTable varid varTable
+                (code1, r1', ty1) = exprCode lExpr r1 state
+                code2 = "    load_address" ++ regToStr(r0) ++ "," ++ show(getSlotNum (varInfo)) ++ "\n"
+                code3 = "    sub_offset" ++ regToStr(r0) ++ "," ++ regToStr(r0) ++ "," ++ regToStr(r1') ++ "\n"
+                (code4, r1'', ty2) = exprCode rExpr r1 state
+                code5 = "    store_indirect" ++ regToStr(r0) ++ "," ++ regToStr(r1) ++ "\n"
+            in
+                (concat([code1,code2,code3,code4,code5]),
+                    state
+                )
+                
+        (Matrix varid lExpr1 lExpr2) ->
+            let
+                varInfo = lookupVarTable varid varTable
+                (code1, r1, ty1) = exprCode lExpr1 2 state
+                (code2, r2, ty2) = exprCode lExpr2 4 state
+                (d1, d2) = getDim varInfo
+                (code0, _, rTy) = exprCode rExpr 0 state
+            in
+                (code0 ++
+                "    load_address" ++ regToStr(1) ++ "," ++ show(getSlotNum (varInfo)) ++ "\n" ++
+                code1 ++ code2 ++
+                "    int_const r3, " ++ show(d1) ++ "\n" ++
+                "    mul_int r2, r2, r3\n" ++
+                "    add_int r2, r2, r4\n" ++
+                "    sub_offset" ++ regToStr(1) ++ "," ++ regToStr(1) ++ "," ++ regToStr(2) ++ "\n" ++
+                "    store_indirect" ++ regToStr(1) ++ "," ++ regToStr(0) ++ "\n"
+                ,state)
+
+stmtCode (Read var) state@(_, varTable, _, _) =
+    case var of
+        (Id varid) -> 
+            let
+                varInfo = lookupVarTable varid varTable
+            in
+                ("    call_builtin read_" ++ readOzTy(getBaseType varInfo) ++ "\n" ++
+                 (storeSingleVar varid varInfo 0)
+                    ,state)
+        
+        (Array varid expr) -> 
+            let
+                varInfo = lookupVarTable varid varTable
+                (code, r, ty) = exprCode expr 2 state
+            in
+                ("    call_builtin read_" ++ readOzTy(getBaseType varInfo) ++ "\n" ++
+                 "    load_address" ++ regToStr(1) ++ "," ++ show(getSlotNum (varInfo)) ++ "\n" ++
+                 code ++
+                 "    sub_offset" ++ regToStr(1) ++ "," ++ regToStr(1) ++ "," ++ regToStr(r) ++ "\n" ++
+                 "    store_indirect" ++ regToStr(1) ++ "," ++ regToStr(0) ++ "\n"
+                    ,state)
+
+        (Matrix varid expr1 expr2) ->
+            let
+                varInfo = lookupVarTable varid varTable
+                (code1, r1, ty1) = exprCode expr1 2 state
+                (code2, r2, ty2) = exprCode expr2 4 state
+                (d1, d2) = getDim varInfo
+            in
+                ("    call_builtin read_" ++ readOzTy(getBaseType varInfo) ++ "\n" ++
+                 "    load_address" ++ regToStr(1) ++ "," ++ show(getSlotNum (varInfo)) ++ "\n" ++
+                 code1 ++ code2 ++
+                 "    int_const r3, " ++ show(d1) ++ "\n" ++
+                 "    mul_int r2, r2, r3\n" ++
+                 "    add_int r2, r2, r4\n" ++
+                 "    sub_offset" ++ regToStr(1) ++ "," ++ regToStr(1) ++ "," ++ regToStr(2) ++ "\n" ++
+                 "    store_indirect" ++ regToStr(1) ++ "," ++ regToStr(0) ++ "\n"
+                    ,state)
+
+stmtCode (Write expr) state = 
+    let 
+        (code, reg, ty) = exprCode expr 0 state
+    in
+        (code ++ 
+        "    call_builtin " ++ (writeBuiltin ty) ++ "\n",
+        state)
+
+stmtCode (If expr stmts) state@(_,_,id,l) = 
+    let
+        (code, _, _) = exprCode expr 0 state
+        newState1@(_,_,_,l1) = incLabel state
+        newState2@(_,_,_,l2) = incLabel newState1
+        (innerStmtsCode,newState3) = stmtsCode stmts newState2
+    in
+        (code ++ 
+        "    branch_on_true r0, " ++ id ++ "_label_" ++ (show l) ++ "\n" ++ 
+        "    branch_uncond "++ id ++"_label_" ++ show(l1) ++ "\n" ++
+        id ++ "_label_" ++ (show l) ++ ":\n" ++
+            innerStmtsCode ++ 
+        (blockLabel id (show l1)),
+            newState3
+        )
+
+stmtCode (IfElse expr stmts1 stmts2) state@(_,_,id,l) =
+    let
+        (code, _, _) = exprCode expr 0 state
+        newState@(_,_,_,l1) = incLabel state
+        newState1@(_,_,_,l2) = incLabel newState
+        (innerStmtsCode1,newState2) = stmtsCode stmts1 newState1
+        (innerStmtsCode2,newState3) = stmtsCode stmts1 newState2
+    in
+        (code++
+        "    branch_on_false r0, " ++ id ++ "_label_" ++ (show l) ++ "\n" ++ 
+            innerStmtsCode1 ++ 
+        "    branch_uncond "++ id ++"_label_" ++ show(l1) ++ "\n" ++
+        (blockLabel id (show l)) ++
+            innerStmtsCode2 ++
+        (blockLabel id (show l1))
+        ,
+        newState2
+        )
+
+stmtCode (While expr stmts) state@(_,_,id,l) =
+    let
+        (code, _, _) = exprCode expr 0 state
+        newState1@(_,_,_,l1) = incLabel state
+        newState2@(_,_,_,l2) = incLabel newState1
+        newState3@(_,_,_,l3) = incLabel newState2
+        (innerStmtsCode, newState4) = stmtsCode stmts newState3
+    in
+        ((blockLabel id (show l)) ++ 
+            code ++
+        "    branch_on_true r0, " ++ id ++ "_label_" ++ show(l1) ++ "\n" ++ 
+        "    branch_uncond " ++ id ++ "_label_" ++ show(l2) ++ "\n" ++ 
+        (blockLabel id (show l1)) ++
+            innerStmtsCode ++
+        "    branch_uncond " ++ id ++ "_label_" ++ show(l) ++ "\n" ++ 
+        (blockLabel id (show l2)),
+        newState4
+        )
+
+storeSingleVar :: Ident -> VarInfo -> Reg -> String
+storeSingleVar varid varInfo r =
+    "    store " ++ show(getSlotNum (varInfo)) ++ "," ++ regToStr(0) ++ "\n" 
+
+exprCode :: Expr -> Reg -> LocalState -> (String, Reg, BaseType)
+exprCode (BoolConst b) r _ = 
+    ("    int_const" ++ regToStr(r) ++ ", "++ show(val) ++"\n",
+        r,
+        BoolType)
+    where 
+        val = boolToInt b
+exprCode (IntConst i) r _ = 
+    ("    int_const" ++ regToStr(r) ++ ", "++ show(i) ++"\n",
+        r,
+        IntType)
+exprCode (FloatConst f) r _ = 
+    ("    real_const" ++ regToStr(r) ++ ", "++ show(f) ++"\n",
+        r,
+        FloatType)
+exprCode (StrConst s) r _ = 
+    ("    string_const" ++ regToStr(r) ++ ", \""++ s ++"\"\n",
+        r,
+        StrType)
+
+exprCode (Var var) r state@(_, varTable, _, _) =
+    case var of
+        (Id varid) -> 
+            let
+                varInfo = lookupVarTable varid varTable
+            in
+                ("    load" ++ regToStr(r) ++ ", " ++ show((getSlotNum varInfo)) ++ "\n",
+                    r,
+                    (getBaseType varInfo))
+        (Array varid expr) -> 
+            let
+                varInfo = lookupVarTable varid varTable
+                (code1, r1, ty) = exprCode expr r state
+                code2 = "    load_address" ++ regToStr(r1+1) ++ "," ++ show(getSlotNum (varInfo)) ++ "\n"
+                code3 = "    sub_offset" ++ regToStr(r1) ++ "," ++ regToStr(r1+1) ++ "," ++ regToStr(r) ++ "\n"
+                code4 = "    load_indirect" ++ regToStr(r1) ++ "," ++ regToStr(r1) ++ "\n"
+            in
+                (concat([code1,code2,code3,code4]),
+                    r,
+                    (getBaseType varInfo)
+                )
+        (Matrix varid expr1 expr2) -> 
+            let
+                varInfo = lookupVarTable varid varTable
+                (code1, r1, ty1) = exprCode expr1 (r+2) state
+                (code2, r2, ty2) = exprCode expr2 (r+4) state
+                (d1, d2) = getDim varInfo
+            in
+                (
+                 ("    load_address" ++ regToStr(r+1) ++ "," ++ show(getSlotNum (varInfo)) ++ "\n" ++
+                 code1 ++ code2 ++
+                 "    int_const " ++ regToStr(r+3) ++ ", " ++ show(d1) ++ "\n" ++
+                 "    mul_int " ++ regToStr(r+2) ++ ", " ++ regToStr(r+2) ++ ", " ++ regToStr(r+3) ++ "\n" ++
+                 "    add_int " ++ regToStr(r+2) ++ ", " ++ regToStr(r+2) ++ ", " ++ regToStr(r+4) ++ "\n" ++
+                 "    sub_offset" ++ regToStr(r+1) ++ "," ++ regToStr(r+1) ++ "," ++ regToStr(r+2) ++ "\n" ++
+                 "    load_indirect" ++ regToStr(r) ++ "," ++ regToStr(r+1) ++ "\n"),
+                 r,
+                 (getBaseType varInfo)
+                )
+
+exprCode (Unary unaOp expr) r state = 
+    let
+        (code, reg, ty) = exprCode expr r state
         code' = 
             case unaOp of
                 Neg -> "    not" ++ regToStr(reg) ++ "," ++ regToStr(reg) ++ "\n"
-                Minus -> "    neg_" ++ (minusCodeByTy ty) ++ regToStr(reg) ++ "," ++ regToStr(reg) ++ "\n"
+                Minus -> "    neg_" ++ (ozTy ty) ++ regToStr(reg) ++ "," ++ regToStr(reg) ++ "\n"
     in
         (code++code', reg, ty)
 
-exprCode (Binary binOp lexpr rexpr) r =
+exprCode (Binary binOp lexpr rexpr) r state =
     let
-        left@(lcode, lreg, lty) = exprCode lexpr r
-        right@(rcode, rreg, rty) = exprCode rexpr (r+1)
-        convertCode = tyConvert binOp left right
-        code' = "\n"
+        left@(lcode, lreg, lty) = exprCode lexpr r state
+        right@(rcode, rreg, rty) = exprCode rexpr (r+1) state
+        (isConvert, convertCode, commonTy) = tyConvert left right
+        (code', afterType) = binOpCode binOp lreg rreg commonTy
     in
-        (lcode ++ rcode ++ code', lreg, lty)
+        (lcode ++ rcode ++ convertCode ++ code', lreg, afterType)
 
-minusCodeByTy :: BaseType -> String
-minusCodeByTy IntType = "int"
-minusCodeByTy FloatType = "real"
+binOpCode :: BinOp -> Reg -> Reg -> BaseType -> (String, BaseType)
+binOpCode binOp reg1 reg2 commonTy =
+    case (classifyBinOp binOp) of
+        Arithmetic -> 
+            case binOp of 
+                Add -> (concat(["    add_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        commonTy)
+                Sub -> (concat(["    sub_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        commonTy)
+                Mul -> (concat(["    mul_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        commonTy)
+                Div -> (concat(["    div_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        commonTy)
+        Comparision -> 
+            case binOp of
+                Eq -> (concat(["    cmp_eq_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        BoolType)
+                NotEq -> (concat(["    cmp_ne_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        BoolType)
+                Lt -> (concat(["    cmp_lt_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        BoolType)
+                LtEq -> (concat(["    cmp_le_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        BoolType)
+                Gt -> (concat(["    cmp_gt_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        BoolType)
+                GtEq -> (concat(["    cmp_ge_", (ozTy commonTy),regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        BoolType)
+        Logic ->
+            case binOp of
+                And -> (concat(["    and",regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        BoolType)
+                Or -> (concat(["    or",regToStr(reg1),",",regToStr(reg1),",",regToStr(reg2),"\n"]),
+                        BoolType)
+
+tyConvert :: (String, Reg, BaseType) -> (String, Reg, BaseType) -> (Bool, String, BaseType)
+tyConvert (_,reg1,ty1) (_,reg2,ty2) =
+    if (isBothBoolType ty1 ty2) then
+        (False, "", BoolType)
+    else
+        if (isBothSameType ty1 ty2) then
+            (False, "", ty1)
+        else
+            let 
+                reg = convertReg (reg1,ty1) (reg2,ty2) 
+            in
+                (True , "    int_to_real" ++ regToStr(reg) ++ "," ++ regToStr(reg) ++ "\n", FloatType)
+
+isBothBoolType :: BaseType -> BaseType -> Bool
+isBothBoolType BoolType BoolType = True
+isBothBoolType _ _ = False
+
+isBothSameType :: BaseType -> BaseType -> Bool
+isBothSameType ty1 ty2 = ty1 == ty2 
+
+convertReg :: (Reg, BaseType) -> (Reg, BaseType) -> Reg
+-- convertReg (reg1,ty1) (reg2,ty2) = 1
+convertReg (reg1,IntType) (reg2,FloatType) = reg1
+convertReg (reg1,FloatType) (reg2,IntType) = reg2
+
+ozTy :: BaseType -> String
+ozTy IntType = "int"
+ozTy FloatType = "real"
+ozTy BoolType = "int"
+
+readOzTy :: BaseType -> String
+readOzTy IntType = "int"
+readOzTy FloatType = "real"
+readOzTy BoolType = "bool"
 
 boolToInt :: Bool -> Int
 boolToInt True = 1 
@@ -215,38 +455,6 @@ writeBuiltin ty = case ty of
 regToStr :: Int -> String
 regToStr i = " r" ++ show(i)
 
--- isRegNeedInc :: Expr -> Expr -> (Bool, Expr, Expr)
--- isRegNeedInc expr expr =
-
--- isBinExpr :: Expr -> Bool
--- isBinExpr (Binary _ _ _) = True
--- isBinExpr _ = False
-
-tyConvert :: BinOp -> (String, Reg, BaseType) -> (String, Reg, BaseType) -> String
-tyConvert binOp (_,reg1,ty1) (_,reg2,ty2) =
-    case (classifyBinOp binOp) of
-        Arithmetic -> 
-            if ty1 == ty2 then
-                ""
-            else
-                let 
-                    reg = convertReg (reg1,ty1) (reg2,ty2) 
-                in
-                    "    int_to_real" ++ regToStr(reg) ++ "," ++ regToStr(reg) ++ "\n"
-
-        Comparision -> 
-            ""
-        Logic ->
-            "" 
-
-convertReg :: (Reg, BaseType) -> (Reg, BaseType) -> Reg
-convertReg (reg1,ty1) (reg2,ty2) = 1
--- convertReg (reg1,ty1) (reg2,ty2) =
---     if ty1 == IntType 
---         then reg1
---         else if ty2 == IntType 
---             then reg2
-
 classifyBinOp :: BinOp -> BinOpClass
 classifyBinOp binOp = 
     case binOp of
@@ -254,7 +462,7 @@ classifyBinOp binOp =
         Sub -> Arithmetic
         Mul -> Arithmetic
         Div -> Arithmetic
-        Eq -> Arithmetic
+        Eq -> Comparision
         NotEq -> Comparision
         Lt -> Comparision
         LtEq -> Comparision
@@ -262,3 +470,5 @@ classifyBinOp binOp =
         GtEq -> Comparision
         And -> Logic
         Or -> Logic
+
+

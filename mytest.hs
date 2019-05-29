@@ -3,6 +3,11 @@ module MyTest where
 import GoatAST
 import qualified Data.Map as Map
 
+data VarInfo
+    = VarInfo BaseType (Maybe Indic)
+        deriving(Show)
+
+
 isBinExpr :: Expr -> Bool
 isBinExpr (Binary _ _ _) = True
 isBinExpr _ = False
@@ -14,7 +19,10 @@ test1 x =
     in
         y'
     
-       
+-- concatMap :: (a -> [b]) -> [a] -> [b]
+
+testConcatMap strLst str = concatMap (strAddColon str) strLst 
+strAddColon str1 str2 = "zijidecode"++str1
 
 add1 :: Int -> Int
 add1 x = x+1
